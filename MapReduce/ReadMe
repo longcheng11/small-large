@@ -1,0 +1,126 @@
+Input format for ROJA, DOJA, DDR and DER approaches:
+// input format of R: a|x
+// input format of S: b*y
+
+===== ROJA =====
+
+HDFS Hierarchy:
+
+/HDFS-Path/ROJA
+/HDFS-Path/ROJA/input (put both "R" and "S" files)
+/HDFS-Path/ROJA/output (results are only counted)
+
+Console execution:
+
+./Path-to-hadoop/bin/hadoop jar /Path-to-jars/ROJA.jar -inputPath /HDFS-Path/ROJA/input -outputPath /HDFS-Path/ROJA/output -reduceTasks 12
+
+Arguments explained:
+-inputPath /HDFS-Path/ROJA/input (put both "R" and "S" files)
+-outputPath /HDFS-Path/ROJA/output (results are only counted)
+-reduceTasks 12 (set number of reduce tasks as: 
+	nodes * CPUs per node, e.g. 2 * 6 = 12)
+
+===============
+
+===== DOJA =====
+
+HDFS Hierarchy:
+
+/HDFS-Path/DOJA
+/HDFS-Path/DOJA/in_memory (put "R" file)
+/HDFS-Path/DOJA/input (put both "R and "S" files)
+/HDFS-Path/DOJA/output (results are only counted)
+
+Note: DOJA requires the R file to be given
+both in memory and as input to be processed 
+by Mappers
+
+Console execution:
+
+./Path-to-hadoop/bin/hadoop jar /Path-to-jars/DOJA.jar -inputPath /HDFS-Path/DOJA/input -outputPath /HDFS-Path/DOJA/output -inMemoryInputPath /HDFS-Path/DOJA/in_memory/R_HDFS.txt -reduceTasks 12
+
+Arguments explained:
+-inputPath /HDFS-Path/DOJA/input (put both "R and "S" files)
+-outputPath /HDFS-Path/DOJA/output (results are only counted)
+-inMemoryInputPath /HDFS-Path/DOJA/in_memory/R_HDFS.txt (put "R" file)
+-reduceTasks 12 (set number of reduce tasks as: 
+	nodes * CPUs per node, e.g. 2 * 6 = 12)
+
+===============
+
+===== DER =====
+
+HDFS Hierarchy:
+
+/HDFS-Path/DER
+/HDFS-Path/DER/in_memory (put "R" file)
+/HDFS-Path/DER/input (put "S" files)
+/HDFS-Path/DER/output (results are only counted)
+
+Console execution:
+
+./Path-to-hadoop/bin/hadoop jar /Path-to-jars/DER.jar -inputPath /HDFS-Path/DER/input -outputPath /HDFS-Path/DER/output -inMemoryInputPath /HDFS-Path/DER/in_memory/R_HDFS.txt -reduceTasks 12
+
+Arguments explained:
+-inputPath /HDFS-Path/DER/input (put "S" files)
+-outputPath /HDFS-Path/DER/output (results are only counted)
+-inMemoryInputPath /HDFS-Path/DER/in_memory/R_HDFS.txt (put "R" file)
+-reduceTasks 12 (set number of reduce tasks as: 
+	nodes * CPUs per node, e.g. 2 * 6 = 12)
+
+----- DER Optimization notes ----- 
+Note that DER outputs during Map phase all non-matched tuples of "R" for each
+Map task (local outer join). Thus, we need to increase the HDFS block size 
+from 64MB up to 512MB (according to input size) in order to decrease the number 
+of non-matched counts. 
+
+For example, with block size of 64MB, for 100 GB of input each non-matched tuple 
+will generate up to 1600 copies. However, with block size of 512MB, for 100 GB 
+of input each non-matched tuple will generate up to 200 copies (which is cheaper
+compared to grouping/sorting "S" and performing local outer join during reduce,
+as this leads to processing DER in 2 jobs).
+
+As opposed to the paper, we do not count the number of computing nodes but we 
+count the number of Map tasks that go through the "S" files.
+------------------------------
+
+===============
+
+===== DDR =====
+
+HDFS Hierarchy:
+
+/HDFS-Path/DDR
+/HDFS-Path/DDR/in_memory (put "R" file)
+/HDFS-Path/DDR/input (put "S" files)
+/HDFS-Path/DDR/output (results are only counted)
+
+Console execution:
+
+
+./Path-to-hadoop/bin/hadoop jar /Path-to-jars/DDR.jar -inputPath /HDFS-Path/DDR/input -outputPath /HDFS-Path/DDR/output -inMemoryInputPath /HDFS-Path/DDR/in_memory/R_HDFS.txt -reduceTasks 12
+
+Arguments explained:
+-inputPath /HDFS-Path/DDR/input (put "S" files)
+-outputPath /HDFS-Path/DDR/output (results are only counted)
+-inMemoryInputPath /HDFS-Path/DDR/in_memory/R_HDFS.txt (put "R" file)
+-reduceTasks 12 (set number of reduce tasks as: 
+	nodes * CPUs per node, e.g. 2 * 6 = 12)
+
+----- DDR Optimization notes ----- 
+Note that DDR outputs during Map phase all non-matched tuples of "R" for each
+Map task (local outer join). Thus, we need to increase the HDFS block size 
+from 64MB up to 512MB (according to input size) in order to decrease the number 
+of non-matched counts. 
+
+For example, with block size of 64MB, for 100 GB of input each non-matched tuple 
+will generate up to 1600 copies. However, with block size of 512MB, for 100 GB 
+of input each non-matched tuple will generate up to 200 copies (which is cheaper
+compared to grouping/sorting "S" and performing local outer join during reduce,
+as this leads to processing DDR in 2 jobs).
+
+As opposed to the paper, we do not count the number of computing nodes but we 
+count the number of Map tasks that go through the "S" files.
+------------------------------
+
+===============
